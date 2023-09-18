@@ -28,13 +28,17 @@
         reports = await dataGateway.LoadReports();
         TestDataJson = System.Text.RegularExpressions.Regex.Unescape(System.Text.Json.JsonSerializer.Serialize(reports));
 
-        //Get last date from reports
+        // Get last date from reports
         DateTime lastReportedDate = reports.Max(r => r.WorkDate);
+
         DateTime lastWeek = lastReportedDate.AddDays(-6);
-        //Filter Reports
+
+        // Filter Reports
         IEnumerable<Report> filteredReports = FilterReports(reports, lastWeek, lastReportedDate);
+
         lastDate = lastReportedDate.ToString("yyyy-MM-dd");
-        //Draw the chart
+
+        // Draw the chart
         await chartJsInterop.Draw(filteredReports, lastWeek, lastReportedDate);
         await InvokeAsync(StateHasChanged);
     }
