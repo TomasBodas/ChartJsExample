@@ -1,0 +1,60 @@
+﻿@inject IDataGateway dataGateway
+@inject IChartJsInterop chartJsInterop
+
+<div class="container">
+    @* Example of chart drawing *@
+    <div class="row">
+        <h4>Test chart:</h4>
+        <div style="width:75%;">
+            <canvas id="chartCanvas"></canvas>
+            <input type="date" id="datePicker" value=@lastDate @onchange="(e) => UpdateLineChart(e)">
+        </div>
+    </div>
+
+    @* Example of test data (as json) *@
+    <div class="row">
+        <h4>Test data:</h4>
+        <span>@TestDataJson</span>
+    </div>
+</div>
+@code
+{
+    string TestDataJson = string.Empty;
+    Report[] reports = Array.Empty<Report>();
+    string lastDate = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        reports = await dataGateway.LoadReports();
+        TestDataJson = System.Text.RegularExpressions.Regex.Unescape(System.Text.Json.JsonSerializer.Serialize(reports));
+
+        //Get last date from reports
+        DateTime lastReportedDate = reports.Max(r => r.WorkDate);
+        DateTime lastWeek = lastReportedDate.AddDays(-6);
+        //Filter Reports
+        IEnumerable<Report> filteredReports = FilterReports(reports, lastWeek, lastReportedDate);
+        lastDate = lastReportedDate.ToString("yyyy-MM-dd");
+        //Draw the chart
+        await chartJsInterop.Draw(filteredReports, lastWeek, lastReportedDate);
+        await InvokeAsync(StateHasChanged);
+    }
+
+   public IEnumerable<Report> FilterReports(Report[] reports, DateTime startDate, DateTime endDate)
+    {
+        return reports.Where(r => r.WorkDate >= startDate && r.WorkDate <= endDate);
+    }
+
+    //Update method for the DatePicker
+    async Task UpdateLineChart(ChangeEventArgs e)
+    {
+        if (e != null)
+        {
+            string dateString = e.Value!.ToString()!;
+            DateTime selectedDate = DateTime.Parse(dateString);
+            DateTime previousWeek = selectedDate.AddDays(-6);
+            IEnumerable<Report> reportsToShow = FilterReports(reports, previousWeek, selectedDate);
+            await chartJsInterop.UpdateLineChart(reportsToShow, previousWeek, selectedDate);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

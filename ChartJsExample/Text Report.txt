@@ -1,0 +1,3 @@
+4 hours
+Front end assignment
+I got familiar with ChartJS and it was pretty easy after that. hardest part was retrieving the dates for the dateRange.
